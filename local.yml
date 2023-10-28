@@ -1,0 +1,40 @@
+version: "3.8"
+
+x-environ: &environ
+  environment:
+    - POSTGRES_DB=postgres
+    - POSTGRES_USER=postgres
+    - POSTGRES_PASSWORD=postgres
+    - POSTGRES_HOST=postgres
+
+x-base: &base
+  <<: *environ
+  build:
+    context: .
+    dockerfile: ./deploy/images/Dockerfile
+  restart: on-failure
+  image: portfolio:local
+  volumes:
+    - ./app:/app
+
+services:
+  portfolio-web:
+    <<: *base
+    container_name: portfolio-web
+    command: pipenv run uvicorn main:app
+    depends_on:
+      - portfolio-postgres
+    restart: on-failure
+
+  portfolio-postgres:
+    <<: *environ
+    container_name: portfolio-postgres
+    image: postgres:15.2-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - pg_data:/var/lib/postgresql/data/
+    restart: on-failure
+
+volumes:
+  pg_data:

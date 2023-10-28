@@ -1,0 +1,35 @@
+version: "3.8"
+
+x-base: &base
+  build:
+    context: .
+    dockerfile: ./deploy/images/Dockerfile
+  env_file: ./app/.env
+  restart: on-failure
+  image: magg-portfolio
+  volumes:
+    - ./app:/app
+
+services:
+  portfolio-web:
+    <<: *base
+    container_name: portfolio-web
+    command: pipenv run uvicorn main:app --port 9020
+    depends_on:
+      - portfolio-migrations
+    ports:
+      - 9020:9020
+    restart: on-failure
+    networks:
+      - caddy-proxy
+
+  portfolio-migrations:
+    <<: *base
+    container_name: portfolio-migrations
+    command: pipenv run python manage.py migrate
+
+networks:
+
+  caddy-proxy:
+    name: caddy-proxy
+    external: true
